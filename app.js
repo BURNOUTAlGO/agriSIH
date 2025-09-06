@@ -151,15 +151,22 @@ function initQRScanner() {
   
   return { config, onScanSuccess, onScanError };
 }
-
 function startQRScanner() {
   if (scannerRunning) return;
-  
+
   const { config, onScanSuccess, onScanError } = initQRScanner();
-  
+
   Html5Qrcode.getCameras().then(devices => {
     if (devices && devices.length) {
-      const cameraId = devices[0].id;
+      // Try to find a camera labeled as "back" or "rear"
+      let backCam = devices.find(device =>
+        device.label.toLowerCase().includes('back') ||
+        device.label.toLowerCase().includes('rear')
+      );
+
+      // If not found, use the first available camera
+      const cameraId = backCam ? backCam.id : devices[0].id;
+
       html5QrCode.start(cameraId, config, onScanSuccess, onScanError)
         .then(() => {
           scannerRunning = true;
@@ -179,6 +186,7 @@ function startQRScanner() {
     $('#scanResults').innerHTML = '<p class="text-red-500">Cannot access camera. Please check permissions.</p>';
   });
 }
+
 
 function stopQRScanner() {
   if (!scannerRunning || !html5QrCode) return;
