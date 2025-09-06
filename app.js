@@ -934,6 +934,9 @@ function renderDistributor() {
   
   $$('.buy-btn').forEach(b => b.addEventListener('click', () => purchaseLot(b.getAttribute('data-id'))));
   
+  // Initialize distributor charges calculator
+  initializeDistributorCharges();
+  
   // Initialize IoT display if data exists
   if (d.iot && d.iot.gps) {
     $('#iotTemp').textContent = d.iot.temp || '—';
@@ -949,6 +952,49 @@ function renderDistributor() {
   
   renderPurchased();
 }
+
+// Function to initialize distributor charges calculator
+function initializeDistributorCharges() {
+  const transportInput = $('#transportationCharge');
+  const storageInput = $('#storageCharge');
+  const handlingInput = $('#handlingCharge');
+  const totalChargesDisplay = $('#totalCharges');
+  
+  // Function to update total charges display
+  function updateTotalCharges() {
+    const transport = Number(transportInput.value) || 0;
+    const storage = Number(storageInput.value) || 0;
+    const handling = Number(handlingInput.value) || 0;
+    const total = transport + storage + handling;
+    
+    totalChargesDisplay.textContent = `₹${total.toFixed(2)}/kg`;
+  }
+  
+  // Add event listeners to update total when values change
+  [transportInput, storageInput, handlingInput].forEach(input => {
+    if (input) {
+      input.addEventListener('input', updateTotalCharges);
+      input.addEventListener('change', updateTotalCharges);
+    }
+  });
+  
+  // Initialize total display
+  updateTotalCharges();
+}
+
+// Function to get current distributor charges
+function getDistributorCharges() {
+  const transportation = Number($('#transportationCharge').value) || 0;
+  const storage = Number($('#storageCharge').value) || 0;
+  const handling = Number($('#handlingCharge').value) || 0;
+  
+  return {
+    transportation,
+    storage,
+    handling,
+    total: transportation + storage + handling
+  };
+}
   
 
 
@@ -957,9 +1003,34 @@ function purchaseLot(id) {
   const item = d.listings.find(x => x.id === id);
   if (!item) return;
   
-  const distPrice = Math.round(item.price * (1 + (10 + Math.random() * 10) / 100));
+  // Get distributor charges
+  const charges = getDistributorCharges();
+  
+  // Calculate distributor price including base markup and charges
+  const baseMarkup = 10 + Math.random() * 10; // 10-20% base markup
+  const baseDistPrice = item.price * (1 + baseMarkup / 100);
+  const distPrice = Math.round(baseDistPrice + charges.total);
+  
   item.status = 'PURCHASED';
-  item.history.push({ stage: 'DISTRIBUTOR', price: distPrice, ts: Date.now() });
+  item.history.push({ 
+    stage: 'DISTRIBUTOR', 
+    price: distPrice, 
+    ts: Date.now(),
+    charges: {
+      transportation: charges.transportation,
+      storage: charges.storage,
+      handling: charges.handling,
+      baseMarkup: baseMarkup.toFixed(1)
+    },
+    breakdown: {
+      farmPrice: item.price,
+      baseMarkup: baseMarkup.toFixed(1) + '%',
+      transportation: charges.transportation,
+      storage: charges.storage,
+      handling: charges.handling,
+      totalPrice: distPrice
+    }
+  });
   
   d.purchases.push({ 
     id: item.id, 
@@ -967,7 +1038,13 @@ function purchaseLot(id) {
     qty: item.qty, 
     farmerPrice: item.price, 
     distributorPrice: distPrice,
-    purchaseTimestamp: Date.now()
+    purchaseTimestamp: Date.now(),
+    charges: {
+      transportation: charges.transportation,
+      storage: charges.storage,
+      handling: charges.handling,
+      total: charges.total
+    }
   });
   
   d.inventory.push({ 
@@ -982,7 +1059,13 @@ function purchaseLot(id) {
     grade: item.grade,
     notes: item.notes,
     farmer: item.farmer,
-    status: 'IN_TRANSIT'
+    status: 'IN_TRANSIT',
+    distributorCharges: {
+      transportation: charges.transportation,
+      storage: charges.storage,
+      handling: charges.handling,
+      total: charges.total
+    }
   });
   
   // Automatically update IoT tracking data when purchase happens
@@ -990,7 +1073,18 @@ function purchaseLot(id) {
   
   store.write(d);
   renderDistributor();
-  alert('Purchased ' + id + ' at ₹' + distPrice + '/kg\nReal-time tracking activated!');
+  
+  // Enhanced purchase confirmation with charge breakdown
+  const chargeBreakdown = `
+Price Breakdown:
+• Farm Price: ₹${item.price}/kg
+• Transportation: ₹${charges.transportation}/kg
+• Storage: ₹${charges.storage}/kg
+• Handling: ₹${charges.handling}/kg
+• Base Markup: ${baseMarkup.toFixed(1)}%
+• Final Price: ₹${distPrice}/kg`;
+  
+  alert(`Purchased ${id} successfully!${chargeBreakdown}\n\nReal-time tracking activated!`);
 }
 
 // Function to automatically update distributor location and IoT data
@@ -1117,34 +1211,100 @@ $('#genIot').addEventListener('click', () => {
 function initializeRetailerEvents() {
   console.log('Initializing retailer event listeners'); // Debug log
   
-  // Initialize compute price button
-  const calcBtn = $('#calcBtn');
-  if (calcBtn) {
-    // Remove existing listener
-    const newCalcBtn = calcBtn.cloneNode(true);
-    calcBtn.parentNode.replaceChild(newCalcBtn, calcBtn);
+  // Initialize retailer margin input and price calculation
+  const retailMarginInput = $('#retailMarginInput');
+  const distributorBatchSelect = $('#distributorBatchSelect');
+  
+  // Function to update price breakdown and final price
+  function updatePriceBreakdown() {
+    const selectedBatchId = distributorBatchSelect.value;
+    const retailMargin = Number(retailMarginInput.value) || 0;
     
-    // Add fresh event listener
-    $('#calcBtn').addEventListener('click', () => {
-      console.log('Compute price clicked'); // Debug log
-      const base = Number($('#calcBase').value) || 0;
-      const dPct = Number($('#calcDist').value) || 0;
-      const rPct = Number($('#calcRetail').value) || 0;
-      
-      console.log('Price calculation inputs:', { base, dPct, rPct }); // Debug log
-      
-      if (base <= 0) {
-        $('#calcOut').textContent = 'Enter valid base price';
-        return;
-      }
-      
-      const dist = Math.round(base * (1 + dPct / 100));
-      const retail = Math.round(dist * (1 + rPct / 100));
-      const margin = Math.round(((retail - base) / base) * 100);
-      
-      const result = `Distributor: ₹${dist}/kg • Retail: ₹${retail}/kg • Total Margin: ${margin}%`;
-      $('#calcOut').textContent = result;
-      console.log('Price calculation result:', result); // Debug log
+    if (!selectedBatchId) {
+      $('#priceBreakdownDisplay').innerHTML = '<div class="text-gray-500 text-center">Select a batch below to see price breakdown</div>';
+      $('#finalRetailPrice').textContent = '₹0/kg';
+      return;
+    }
+    
+    const d = store.read();
+    const batch = d.inventory.find(x => x.id === selectedBatchId);
+    
+    if (!batch) {
+      $('#priceBreakdownDisplay').innerHTML = '<div class="text-red-500 text-center">Batch not found</div>';
+      $('#finalRetailPrice').textContent = '₹0/kg';
+      return;
+    }
+    
+    // Calculate final retail price
+    const distributorPrice = batch.distributorPrice;
+    const retailPrice = Math.round(distributorPrice * (1 + retailMargin / 100));
+    
+    // Build price breakdown display
+    let breakdownHtml = `
+      <div class="space-y-2">
+        <div class="flex justify-between">
+          <span class="text-gray-600">Farm Price:</span>
+          <span class="font-semibold">₹${batch.farmerPrice}/kg</span>
+        </div>`;
+    
+    if (batch.distributorCharges) {
+      const charges = batch.distributorCharges;
+      breakdownHtml += `
+        <div class="border-t pt-2">
+          <div class="text-xs text-gray-500 mb-1">Distributor Charges:</div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600 ml-2">• Transportation:</span>
+            <span>₹${charges.transportation}/kg</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600 ml-2">• Storage:</span>
+            <span>₹${charges.storage}/kg</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600 ml-2">• Handling:</span>
+            <span>₹${charges.handling}/kg</span>
+          </div>
+        </div>`;
+    }
+    
+    breakdownHtml += `
+        <div class="border-t pt-2">
+          <div class="flex justify-between font-medium">
+            <span class="text-blue-600">Distributor Price:</span>
+            <span class="text-blue-600">₹${distributorPrice}/kg</span>
+          </div>
+        </div>
+        <div class="border-t pt-2">
+          <div class="flex justify-between">
+            <span class="text-gray-600">Your Margin (${retailMargin}%):</span>
+            <span class="text-green-600">+₹${(retailPrice - distributorPrice)}/kg</span>
+          </div>
+        </div>
+      </div>`;
+    
+    $('#priceBreakdownDisplay').innerHTML = breakdownHtml;
+    $('#finalRetailPrice').textContent = `₹${retailPrice}/kg`;
+  }
+  
+  // Add event listeners for real-time price updates
+  if (retailMarginInput) {
+    const newMarginInput = retailMarginInput.cloneNode(true);
+    retailMarginInput.parentNode.replaceChild(newMarginInput, retailMarginInput);
+    
+    $('#retailMarginInput').addEventListener('input', updatePriceBreakdown);
+    $('#retailMarginInput').addEventListener('change', updatePriceBreakdown);
+  }
+  
+  if (distributorBatchSelect) {
+    const newBatchSelect = distributorBatchSelect.cloneNode(true);
+    distributorBatchSelect.parentNode.replaceChild(newBatchSelect, distributorBatchSelect);
+    
+    $('#distributorBatchSelect').addEventListener('change', () => {
+      updatePriceBreakdown();
+      // Re-populate the select to maintain its content
+      renderRetailer();
+      // Update breakdown again after re-render
+      setTimeout(updatePriceBreakdown, 100);
     });
   }
   
@@ -1161,10 +1321,17 @@ function initializeRetailerEvents() {
     $('#retailPurchaseBtn').addEventListener('click', () => {
       console.log('Retailer purchase clicked'); // Debug log
       const selectedBatchId = $('#distributorBatchSelect').value;
-      console.log('Selected batch ID:', selectedBatchId); // Debug log
+      const retailMargin = Number($('#retailMarginInput').value) || 0;
+      
+      console.log('Selected batch ID:', selectedBatchId, 'Retail Margin:', retailMargin); // Debug log
       
       if (!selectedBatchId) {
         alert('Please select a batch to purchase');
+        return;
+      }
+      
+      if (retailMargin < 0) {
+        alert('Please enter a valid retail margin (0% or higher)');
         return;
       }
       
@@ -1177,19 +1344,20 @@ function initializeRetailerEvents() {
         return;
       }
       
-      // Calculate retail price (20-30% markup)
-      const retailMarkup = 20 + Math.random() * 10;
-      const retailPrice = Math.round(batch.distributorPrice * (1 + retailMarkup / 100));
+      // Calculate retail price using the margin
+      const retailPrice = Math.round(batch.distributorPrice * (1 + retailMargin / 100));
       
       // Update batch with retail information
       batch.retailPrice = retailPrice;
-      batch.margin = Math.round(((retailPrice - batch.farmerPrice) / batch.farmerPrice) * 100);
+      batch.retailMargin = retailMargin; // Store actual retailer margin
+      batch.totalMargin = Math.round(((retailPrice - batch.farmerPrice) / batch.farmerPrice) * 100); // Total margin from farm
       batch.status = 'RETAIL';
       batch.history.push({ 
         stage: 'RETAILER', 
         price: retailPrice, 
         ts: Date.now(),
-        retailer: 'Demo Retailer'
+        retailer: 'Demo Retailer',
+        margin: retailMargin
       });
       
       // Add to retail purchases
@@ -1199,15 +1367,35 @@ function initializeRetailerEvents() {
         qty: batch.qty,
         purchasePrice: batch.distributorPrice,
         retailPrice: retailPrice,
-        margin: retailMarkup,
+        margin: retailMargin,
         timestamp: Date.now()
       });
       
       store.write(d);
-      alert(`Successfully purchased ${batch.crop} for retail at ₹${batch.distributorPrice}/kg. Retail price set to ₹${retailPrice}/kg (${retailMarkup.toFixed(1)}% markup)`);
+      
+      // Enhanced alert with detailed breakdown
+      let alertMessage = `Successfully purchased ${batch.crop} for retail!\n\nPrice Breakdown:\n• Farm Price: ₹${batch.farmerPrice}/kg`;
+      
+      if (batch.distributorCharges) {
+        const charges = batch.distributorCharges;
+        alertMessage += `\n• Transportation: ₹${charges.transportation}/kg`;
+        alertMessage += `\n• Storage: ₹${charges.storage}/kg`;
+        alertMessage += `\n• Handling: ₹${charges.handling}/kg`;
+        alertMessage += `\n• Total Distributor Charges: ₹${charges.total}/kg`;
+      }
+      
+      alertMessage += `\n• Distributor Price: ₹${batch.distributorPrice}/kg`;
+      alertMessage += `\n• Your Margin: ${retailMargin}% (+₹${(retailPrice - batch.distributorPrice)}/kg)`;
+      alertMessage += `\n• Final Retail Price: ₹${retailPrice}/kg`;
+      alertMessage += `\n\nTotal Margin from Farm: ${Math.round(((retailPrice - batch.farmerPrice) / batch.farmerPrice) * 100)}%`;
+      
+      alert(alertMessage);
       renderRetailer();
     });
   }
+  
+  // Initialize the price breakdown on load
+  updatePriceBreakdown();
   
   console.log('Retailer event listeners initialized');
 }
@@ -1217,13 +1405,32 @@ function renderRetailer() {
   const d = store.read();
   console.log('renderRetailer called - Current inventory:', d.inventory); // Debug log
   
-  $('#retailTable').innerHTML = d.inventory.map(x => `
+  $('#retailTable').innerHTML = d.inventory.map(x => {
+    let chargesDisplay = '<span class="text-gray-400">—</span>';
+    if (x.distributorCharges) {
+      const charges = x.distributorCharges;
+      chargesDisplay = `<div class="text-xs">
+        <div>T: ₹${charges.transportation}</div>
+        <div>S: ₹${charges.storage}</div>
+        <div>H: ₹${charges.handling}</div>
+      </div>`;
+    }
+    
+    // Show only retailer's actual margin, not total margin from farm
+    let marginDisplay = '<span class="text-gray-400">—</span>';
+    if (x.retailPrice && x.retailMargin !== undefined) {
+      marginDisplay = `${x.retailMargin}%`;
+    }
+    
+    return `
     <tr class="border-t">
       <td class="py-2">${x.id}</td><td>${x.crop}</td><td>${x.qty} kg</td>
       <td>₹${x.farmerPrice}</td><td>₹${x.distributorPrice}</td>
+      <td>${chargesDisplay}</td>
       <td>${x.retailPrice ? '₹'+x.retailPrice : '<span class="text-gray-400">—</span>'}</td>
-      <td>${x.margin ? x.margin+'%' : '<span class="text-gray-400">—</span>'}</td>
-    </tr>`).join('');
+      <td>${marginDisplay}</td>
+    </tr>`;
+  }).join('');
     
   // Populate distributor batches for retailer purchase
   const distributorBatches = d.inventory.filter(x => x.status === 'IN_TRANSIT' && !x.retailPrice);
@@ -1231,8 +1438,14 @@ function renderRetailer() {
   
   const selectElement = $('#distributorBatchSelect');
   if (selectElement) {
+    const currentSelection = selectElement.value; // Preserve current selection
+    
     selectElement.innerHTML = '<option value="">Select batch to purchase...</option>' + 
-      distributorBatches.map(x => `<option value="${x.id}">${x.crop} (Grade ${x.grade}) - ₹${x.distributorPrice}/kg - ${x.qty}kg available</option>`).join('');
+      distributorBatches.map(x => {
+        const chargeInfo = x.distributorCharges ? 
+          ` (Charges: ₹${x.distributorCharges.total}/kg)` : '';
+        return `<option value="${x.id}" ${currentSelection === x.id ? 'selected' : ''}>${x.crop} (Grade ${x.grade}) - ₹${x.distributorPrice}/kg${chargeInfo} - ${x.qty}kg available</option>`;
+      }).join('');
     
     if (distributorBatches.length === 0) {
       selectElement.innerHTML = '<option value="">No batches available - Distributors need to purchase from farmers first</option>';
