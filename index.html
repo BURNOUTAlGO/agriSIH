@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgriChain – Transparent Supply Chain</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <!-- Header -->
+  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-2xl bg-emerald-500 grid place-items-center text-white font-bold">A</div>
+          <div>
+            <h1 class="text-lg font-semibold">AgriChain</h1>
+            <p class="text-xs text-gray-500 -mt-1">Blockchain-based transparency</p>
+          </div>
+        </div>
+        <nav class="hidden md:flex items-center gap-5 text-sm">
+          <a href="#home" class="navlink">Home</a>
+          <a href="#farmer" class="navlink">Farmer</a>
+          <a href="#distributor" class="navlink">Distributor</a>
+          <a href="#retailer" class="navlink">Retailer</a>
+          <a href="#consumer" class="navlink">Consumer</a>
+          <a href="#qr-scanner" class="navlink">QR Scanner</a>
+          <a href="#about" class="navlink">About</a>
+        </nav>
+        <div class="flex items-center gap-3">
+          <button id="langToggle" class="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm border border-gray-200 text-sm hover:border-emerald-400">EN / HI</button>
+          <button id="mobileMenuBtn" class="md:hidden inline-flex items-center gap-2 rounded-2xl px-3 py-2 shadow-sm border border-gray-200" aria-label="Open menu">☰</button>
+        </div>
+      </div>
+    </div>
+    <div id="mobileMenu" class="md:hidden border-t border-gray-200 bg-white hidden">
+      <div class="px-4 py-2 grid gap-2 text-sm">
+        <a href="#home" class="navlink block">Home</a>
+        <a href="#farmer" class="navlink block">Farmer</a>
+        <a href="#distributor" class="navlink block">Distributor</a>
+        <a href="#retailer" class="navlink block">Retailer</a>
+        <a href="#consumer" class="navlink block">Consumer</a>
+        <a href="#qr-scanner" class="navlink block">QR Scanner</a>
+        <a href="#about" class="navlink block">About</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- HOME -->
+    <section id="home" class="page">
+      <div class="grid lg:grid-cols-2 gap-8 items-center">
+        <div>
+          <h2 class="text-3xl font-bold leading-tight" data-i18n="home_title">Trace your food from <span class="text-emerald-600">farm‑to‑fork</span>.</h2>
+          <p class="mt-3 text-gray-600" data-i18n="home_sub">Transparent prices, quality assurance, and trusted origins — powered by blockchain. Now with QR code tracking!</p>
+          <div class="mt-6 flex gap-3">
+            <a href="#farmer" class="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm bg-emerald-500 text-white hover:bg-emerald-600">Farmer Dashboard</a>
+            <a href="#consumer" class="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm border border-gray-200 bg-white hover:border-emerald-400">Consumer Portal</a>
+            <a href="#qr-scanner" class="inline-flex items-center gap-2 rounded-2xl px-4 py-2 shadow-sm border border-emerald-400 bg-white hover:bg-emerald-50">📱 QR Scanner</a>
+          </div>
+          <dl class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="rounded-2xl shadow-md p-6 bg-white">
+              <dt class="text-xs text-gray-500">Producers</dt>
+              <dd class="text-xl font-semibold" id="statFarmers">0</dd>
+            </div>
+            <div class="rounded-2xl shadow-md p-6 bg-white">
+              <dt class="text-xs text-gray-500">Batches Tracked</dt>
+              <dd class="text-xl font-semibold" id="statBatches">0</dd>
+            </div>
+            <div class="rounded-2xl shadow-md p-6 bg-white">
+              <dt class="text-xs text-gray-500">On‑time Deliveries</dt>
+              <dd class="text-xl font-semibold" id="statOnTime">0%</dd>
+            </div>
+            <div class="rounded-2xl shadow-md p-6 bg-white">
+              <dt class="text-xs text-gray-500">Eco Score</dt>
+              <dd class="text-xl font-semibold" id="statEco">—</dd>
+            </div>
+          </dl>
+        </div>
+        <div class="rounded-2xl shadow-md p-6 bg-white">
+          <h3 class="font-semibold mb-4">How it works</h3>
+          <ol class="list-decimal ml-5 space-y-2 text-sm">
+            <li>Farmer lists produce (price, quantity, quality) & generates QR code.</li>
+            <li>Distributor picks & logs transport conditions with real-time tracking.</li>
+            <li>Retailer updates shelf & price breakdown.</li>
+            <li>Consumer scans QR code or enters Batch ID to verify origin & price history.</li>
+            <li>Farmer can track real-time location and transaction history via QR scan.</li>
+          </ol>
+          <div class="mt-6 flex gap-2 flex-wrap">
+            <span class="rounded-full px-3 py-1 text-xs font-medium bg-gray-100">Blockchain</span>
+            <span class="rounded-full px-3 py-1 text-xs font-medium bg-gray-100">Smart Contracts</span>
+            <span class="rounded-full px-3 py-1 text-xs font-medium bg-emerald-100 text-emerald-800">QR Scanner</span>
+            <span class="rounded-full px-3 py-1 text-xs font-medium bg-gray-100">IoT‑ready</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FARMER DASHBOARD (with QR Generation) -->
+    <section id="farmer" class="page hidden">
+      <h2 class="text-2xl font-bold">👨‍🌾 Farmer Dashboard</h2>
+      <p class="text-gray-600 mt-1">List crops, track listings, generate QR codes, and look up batches.</p>
+      <div class="grid lg:grid-cols-3 gap-6 mt-6">
+        <!-- Listing Form -->
+        <div class="lg:col-span-2 rounded-2xl shadow-md p-6 bg-white">
+          <h3 class="font-semibold mb-4">Add Produce</h3>
+          <form id="farmerForm" class="grid md:grid-cols-2 gap-4">
+            <input name="crop" placeholder="Crop (e.g. Wheat)" required />
+            <select name="grade"><option>A</option><option>B</option><option>C</option></select>
+            <input type="number" name="qty" min="1" value="100" required placeholder="Quantity (kg)" />
+            <input type="number" name="price" min="1" value="25" required placeholder="Expected Price (₹/kg)" />
+            <input name="notes" placeholder="Notes (e.g. organic)" class="md:col-span-2" />
+            <div class="md:col-span-2 flex gap-3">
+              <button type="submit" class="bg-emerald-500 text-white px-3 py-2 rounded-xl">Save Listing</button>
+              <button type="reset" class="border px-3 py-2 rounded-xl">Reset</button>
+              <button id="seedData" type="button" class="border px-3 py-2 rounded-xl">Seed Demo Data</button>
+            </div>
+          </form>
+        </div>
+        <!-- Lookup Panel for Farmer -->
+        <div class="rounded-2xl shadow-md p-6 bg-white">
+          <h3 class="font-semibold mb-2">Lookup Batch (Farmer)</h3>
+          <input id="lookupBatchFarmer" placeholder="Enter Batch ID" class="w-full rounded-xl border px-3 py-2" />
+          <button id="lookupFarmerBtn" class="mt-2 w-full bg-emerald-500 text-white px-3 py-2 rounded-xl">Lookup</button>
+          <div id="lookupFarmerResult" class="mt-4 text-sm"></div>
+        </div>
+      </div>
+
+      <!-- Farmer Listings Table with QR Codes -->
+      <div class="rounded-2xl shadow-md p-6 bg-white mt-6 overflow-x-auto">
+        <h3 class="font-semibold mb-3">My Listings</h3>
+        <table class="min-w-full text-sm">
+          <thead><tr><th>BatchID</th><th>Crop</th><th>Grade</th><th>Qty</th><th>Exp Price</th><th>Status</th><th>QR Code</th></tr></thead>
+          <tbody id="farmerTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- DISTRIBUTOR DASHBOARD -->
+    <section id="distributor" class="page hidden">
+      <h2 class="text-2xl font-bold">🚚 Distributor Dashboard</h2>
+      <p class="text-gray-600 mt-1">Purchase lots and log transport/storage conditions.</p>
+      <div class="grid lg:grid-cols-3 gap-6 mt-6">
+        <div class="lg:col-span-2 rounded-2xl shadow-md p-6 bg-white overflow-x-auto">
+          <h3 class="font-semibold mb-3">Available Batches</h3>
+          <table class="min-w-full text-sm">
+            <thead><tr><th>BatchID</th><th>Crop</th><th>Grade</th><th>Qty</th><th>Price</th><th></th></tr></thead>
+            <tbody id="marketTable"></tbody>
+          </table>
+        </div>
+        <div class="rounded-2xl shadow-md p-6 bg-white">
+          <h3 class="font-semibold mb-2">Real-time Tracking</h3>
+          <div class="grid gap-3">
+            <div class="flex justify-between text-sm"><span>Temperature</span><span id="iotTemp">—</span></div>
+            <div class="flex justify-between text-sm"><span>Humidity</span><span id="iotHum">—</span></div>
+            <div class="flex justify-between text-sm"><span>GPS Location</span><span id="iotGps">—</span></div>
+            <div class="flex justify-between text-sm"><span>Last Updated</span><span id="iotTime">—</span></div>
+            <button id="genIot" class="mt-2 w-full border px-3 py-2 rounded-xl">Update Location</button>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-2xl shadow-md p-6 bg-white mt-6">
+        <h3 class="font-semibold mb-2">Purchased Lots</h3>
+        <ul id="purchasedList" class="list-disc ml-5 text-sm"></ul>
+      </div>
+    </section>
+
+    <!-- RETAILER DASHBOARD -->
+    <section id="retailer" class="page hidden">
+      <h2 class="text-2xl font-bold">🏬 Retailer Dashboard</h2>
+      <p class="text-gray-600 mt-1">Manage inventory and show transparent price breakdown.</p>
+      <div class="grid lg:grid-cols-3 gap-6 mt-6">
+        <div class="lg:col-span-2 rounded-2xl shadow-md p-6 bg-white overflow-x-auto">
+          <h3 class="font-semibold mb-3">Inventory</h3>
+          <table class="min-w-full text-sm">
+            <thead><tr><th>BatchID</th><th>Crop</th><th>Qty</th><th>Farmer ₹/kg</th><th>Distributor ₹/kg</th><th>Retail ₹/kg</th><th>Margin</th></tr></thead>
+            <tbody id="retailTable"></tbody>
+          </table>
+        </div>
+        <div class="rounded-2xl shadow-md p-6 bg-white">
+          <h3 class="font-semibold mb-2">Price Calculator</h3>
+          <div class="grid gap-3">
+            <input id="calcBase" placeholder="Base (₹/kg)" type="number" class="rounded-xl border px-3 py-2" />
+            <input id="calcDist" placeholder="Distributor Margin (%)" type="number" class="rounded-xl border px-3 py-2" />
+            <input id="calcRetail" placeholder="Retail Margin (%)" type="number" class="rounded-xl border px-3 py-2" />
+            <button id="calcBtn" class="bg-emerald-500 text-white px-3 py-2 rounded-xl">Compute</button>
+            <div id="calcOut" class="text-lg font-semibold mt-2">—</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONSUMER LOOKUP -->
+    <section id="consumer" class="page hidden">
+      <h2 class="text-2xl font-bold">🛍 Consumer Portal</h2>
+      <p class="text-gray-600 mt-1">Enter Batch ID or scan QR code to verify origin, quality, and price history.</p>
+      <div class="grid lg:grid-cols-2 gap-6">
+        <div class="rounded-2xl shadow-md p-6 bg-white">
+          <h3 class="font-semibold mb-4">Manual Lookup</h3>
+          <input id="lookupBatchConsumer" placeholder="Enter Batch ID" class="w-full rounded-xl border px-3 py-2" />
+          <button id="lookupConsumerBtn" class="mt-2 w-full bg-emerald-500 text-white px-3 py-2 rounded-xl">Lookup</button>
+        </div>
+        <div class="rounded-2xl shadow-md p-6 bg-white">
+          <h3 class="font-semibold mb-4">Quick Actions</h3>
+          <div class="flex flex-col gap-2">
+            <a href="#qr-scanner" class="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 shadow-sm bg-emerald-500 text-white hover:bg-emerald-600">
+              📱 Scan QR Code
+            </a>
+            <button id="sampleQRScan" class="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 shadow-sm border border-gray-200 hover:border-emerald-400">
+              🔍 Try Sample QR
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-2xl shadow-md p-6 bg-white mt-6">
+        <div id="lookupConsumerResult" class="text-sm"></div>
+      </div>
+    </section>
+
+    <!-- QR SCANNER PAGE -->
+    <section id="qr-scanner" class="page hidden">
+      <h2 class="text-2xl font-bold">📱 QR Code Scanner</h2>
+      <p class="text-gray-600 mt-1">Scan QR codes to track batches. Different views for farmers and consumers.</p>
+      
+      <div class="grid lg:grid-cols-2 gap-6 mt-6">
+        <!-- Scanner Interface -->
+        <div class="rounded-2xl shadow-md p-6 bg-white">
+          <h3 class="font-semibold mb-4">Scanner</h3>
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Scan as:</label>
+            <select id="userType" class="w-full rounded-xl border px-3 py-2">
+              <option value="consumer">Consumer</option>
+              <option value="farmer">Farmer</option>
+            </select>
+          </div>
+          <div id="qr-reader" class="w-full max-w-sm mx-auto bg-gray-100 rounded-xl overflow-hidden"></div>
+          <div class="mt-4 flex gap-2">
+            <button id="startScan" class="flex-1 bg-emerald-500 text-white px-3 py-2 rounded-xl">Start Camera</button>
+            <button id="stopScan" class="flex-1 border px-3 py-2 rounded-xl" disabled>Stop Camera</button>
+          </div>
+          <div class="mt-4">
+            <p class="text-xs text-gray-600 mb-2">Or enter Batch ID manually:</p>
+            <div class="flex gap-2">
+              <input id="manualBatchId" placeholder="Batch ID" class="flex-1 rounded-xl border px-3 py-2" />
+              <button id="manualLookup" class="bg-gray-500 text-white px-3 py-2 rounded-xl">Lookup</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Display -->
+        <div class="rounded-2xl shadow-md p-6 bg-white">
+          <h3 class="font-semibold mb-4">Scan Results</h3>
+          <div id="scanResults" class="text-sm text-gray-600">
+            <p>Scan a QR code or enter a Batch ID to see details...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="about" class="page hidden">
+      <h2 class="text-2xl font-bold">About This Demo</h2>
+      <p class="text-gray-600 mt-1">Frontend prototype with QR code functionality using camera and manual input. Features different views for farmers and consumers.</p>
+      <div class="rounded-2xl shadow-md p-6 bg-white mt-6">
+        <h3 class="font-semibold mb-3">Features Added:</h3>
+        <ul class="list-disc ml-5 space-y-1 text-sm">
+          <li>QR code generation for each batch ID</li>
+          <li>Camera-based QR code scanning</li>
+          <li>Different views for farmers (transaction history + real-time tracking) and consumers (basic product info)</li>
+          <li>Real-time location tracking simulation</li>
+          <li>Manual batch ID lookup as fallback</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- QR Code Modal -->
+  <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-semibold">QR Code for Batch</h3>
+        <button id="closeQRModal" class="text-gray-500 hover:text-gray-700 text-xl">&times;</button>
+      </div>
+      <div class="text-center">
+        <div id="qrCodeDisplay" class="inline-block p-4 bg-white border rounded-xl"></div>
+        <p id="qrBatchId" class="mt-2 text-sm font-medium"></p>
+        <p class="text-xs text-gray-500 mt-1">Scan with any QR reader or use the built-in scanner</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="py-8 text-center text-xs text-gray-500">Built for demo • QR Scanner functional • Replace localStorage with real APIs / blockchain later.</footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
