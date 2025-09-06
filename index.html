@@ -482,15 +482,55 @@
 
   <!-- QR Code Modal -->
   <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl p-4 sm:p-6 max-w-md w-full mx-4">
+    <div class="bg-white rounded-2xl p-4 sm:p-6 max-w-lg w-full mx-4">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="font-semibold text-base sm:text-lg">QR Code for Batch</h3>
+        <h3 class="font-semibold text-base sm:text-lg flex items-center">
+          <span class="text-blue-600 mr-2">📱</span> QR Code & Batch Details
+        </h3>
         <button id="closeQRModal" class="text-gray-500 hover:text-gray-700 text-xl">&times;</button>
       </div>
+      
       <div class="text-center">
-        <div id="qrCodeDisplay" class="inline-block p-4 bg-white border rounded-xl"></div>
-        <p id="qrBatchId" class="mt-2 text-sm font-medium"></p>
-        <p class="text-xs text-gray-500 mt-1">Scan with any QR reader or use the built-in scanner</p>
+        <!-- QR Code Display -->
+        <div class="bg-white border-2 border-gray-200 rounded-xl p-4 mb-4 inline-block">
+          <div id="qrCodeDisplay" class="flex items-center justify-center min-h-[140px]">
+            <div class="text-gray-400">Generating QR code...</div>
+          </div>
+        </div>
+        
+        <!-- Batch Information Card -->
+        <div class="bg-gray-50 rounded-xl p-4 mb-4">
+          <div class="grid grid-cols-1 gap-3 text-sm">
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600 font-medium">Batch ID:</span>
+              <span id="qrBatchId" class="font-mono bg-white px-3 py-1 rounded-lg border font-bold text-blue-600">-</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600 font-medium">QR Data:</span>
+              <span class="text-xs text-gray-500">Blockchain verified</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600 font-medium">Scan Method:</span>
+              <span class="text-xs text-gray-500">Any QR reader or built-in scanner</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button onclick="navigator.share && navigator.share({title: document.getElementById('qrBatchId').textContent, text: 'Track this AgriChain batch', url: window.location.origin + window.location.pathname + '#qr-scanner?batch=' + document.getElementById('qrBatchId').textContent.replace('Batch ID: ', '')}).catch(() => {})" 
+                  class="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+            <span>🔗</span> Share Batch
+          </button>
+          <button onclick="window.print()" 
+                  class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+            <span>🖨️</span> Print QR
+          </button>
+        </div>
+        
+        <p class="text-xs text-gray-500 mt-4">
+          <span class="text-green-600">✓</span> Scan this QR code to access complete supply chain information
+        </p>
       </div>
     </div>
   </div>

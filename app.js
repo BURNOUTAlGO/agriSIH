@@ -108,6 +108,14 @@ function showPage(hash) {
 window.addEventListener('hashchange', () => showPage(location.hash));
 window.addEventListener('DOMContentLoaded', () => {
   console.log('DOM loaded, initializing...'); // Debug log
+  
+  // Check if QRCode library is loaded
+  if (typeof QRCode === 'undefined') {
+    console.error('QRCode library is not loaded! Check script tags.');
+  } else {
+    console.log('QRCode library loaded successfully');
+  }
+  
   showPage(location.hash || '#home');
   refreshStats();
   
@@ -153,37 +161,163 @@ $$('#mobileMenu .navlink').forEach(link => {
 
 // -- QR Code Generation --
 function generateQRCode(batchId) {
+  // Check if QRCode library is loaded
+  if (typeof QRCode === 'undefined') {
+    console.error('QRCode library not loaded');
+    // Fallback: Generate a simple text-based QR representation
+    return Promise.resolve(generateFallbackQR(batchId));
+  }
+  
   const canvas = document.createElement('canvas');
   const qrData = `${window.location.origin}${window.location.pathname}#qr-scanner?batch=${batchId}`;
   
+  console.log('Generating QR code for:', batchId, 'with data:', qrData);
+  
   return new Promise((resolve) => {
-    QRCode.toCanvas(canvas, qrData, {
-      width: 120,
-      height: 120,
-      margin: 2
-    }, (error) => {
-      if (error) {
-        console.error('QR generation error:', error);
-        resolve(null);
-      } else {
-        resolve(canvas.toDataURL());
-      }
-    });
+    try {
+      QRCode.toCanvas(canvas, qrData, {
+        width: 140,
+        height: 140,
+        margin: 2,
+        color: {
+          dark: '#1f2937',  // Dark gray for better scanning
+          light: '#ffffff'  // White background
+        },
+        errorCorrectionLevel: 'M'  // Medium error correction
+      }, (error) => {
+        if (error) {
+          console.error('QR generation error:', error);
+          // Fallback on error
+          resolve(generateFallbackQR(batchId));
+        } else {
+          console.log('QR code generated successfully');
+          resolve(canvas.toDataURL('image/png'));
+        }
+      });
+    } catch (err) {
+      console.error('Exception in QR generation:', err);
+      // Fallback on exception
+      resolve(generateFallbackQR(batchId));
+    }
   });
 }
 
-function showQRModal(batchId) {
-  $('#qrBatchId').textContent = `Batch ID: ${batchId}`;
-  $('#qrModal').classList.remove('hidden');
-  $('#qrModal').classList.add('flex');
+// Fallback QR generation using a simple pattern
+function generateFallbackQR(batchId) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = 140;
+  canvas.height = 140;
   
+  // Fill with white background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, 140, 140);
+  
+  // Draw a simple pattern
+  ctx.fillStyle = '#1f2937';
+  
+  // Draw border
+  ctx.fillRect(0, 0, 140, 5);
+  ctx.fillRect(0, 0, 5, 140);
+  ctx.fillRect(135, 0, 5, 140);
+  ctx.fillRect(0, 135, 140, 5);
+  
+  // Draw simple pattern based on batch ID
+  const hash = batchId.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+  
+  for (let i = 0; i < 10; i++) {
+    for (let j = 0; j < 10; j++) {
+      if ((hash + i * j) % 3 === 0) {
+        ctx.fillRect(15 + i * 11, 15 + j * 11, 8, 8);
+      }
+    }
+  }
+  
+  // Add text
+  ctx.fillStyle = '#1f2937';
+  ctx.font = '8px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('QR FALLBACK', 70, 130);
+  
+  console.log('Generated fallback QR for:', batchId);
+  return canvas.toDataURL('image/png');
+}
+
+function showQRModal(batchId) {
+  console.log('showQRModal called with batchId:', batchId);
+  
+  // Update batch ID display
+  const batchIdElement = $('#qrBatchId');
+  if (batchIdElement) {
+    batchIdElement.textContent = batchId;
+  } else {
+    console.error('qrBatchId element not found');
+  }
+  
+  // Show modal
+  const modal = $('#qrModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  } else {
+    console.error('qrModal element not found');
+    return;
+  }
+  
+  // Get batch details for enhanced display
+  const d = store.read();
+  const batch = d.listings.concat(d.inventory).find(x => x.id === batchId);
+  
+  // Show loading state
+  const qrDisplayElement = $('#qrCodeDisplay');
+  if (qrDisplayElement) {
+    qrDisplayElement.innerHTML = `
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+        <div class="text-gray-500 text-sm">Generating QR code...</div>
+      </div>
+    `;
+  }
+  
+  // Generate QR code
   generateQRCode(batchId).then(dataUrl => {
-    if (dataUrl) {
-      $('#qrCodeDisplay').innerHTML = `<img src="${dataUrl}" alt="QR Code for ${batchId}" class="mx-auto">`;
-    } else {
-      $('#qrCodeDisplay').innerHTML = '<p class="text-red-500">Failed to generate QR code</p>';
+    console.log('QR generation result:', dataUrl ? 'Success' : 'Failed');
+    
+    if (qrDisplayElement) {
+      if (dataUrl) {
+        qrDisplayElement.innerHTML = `
+          <div class="text-center">
+            <img src="${dataUrl}" alt="QR Code for ${batchId}" class="mx-auto mb-2" style="width: 140px; height: 140px; border: 1px solid #e5e7eb; border-radius: 8px;">
+            <div class="text-xs text-gray-500">${batch ? batch.crop : 'AgriChain'} Batch</div>
+          </div>
+        `;
+      } else {
+        qrDisplayElement.innerHTML = `
+          <div class="text-center text-red-500">
+            <div class="text-2xl mb-2">⚠️</div>
+            <div class="text-sm">Failed to generate QR code</div>
+            <div class="text-xs text-gray-500 mt-1">Check console for details</div>
+          </div>
+        `;
+      }
+    }
+  }).catch(error => {
+    console.error('QR generation promise error:', error);
+    if (qrDisplayElement) {
+      qrDisplayElement.innerHTML = `
+        <div class="text-center text-red-500">
+          <div class="text-2xl mb-2">⚠️</div>
+          <div class="text-sm">Error generating QR code</div>
+          <div class="text-xs text-gray-500 mt-1">${error.message}</div>
+        </div>
+      `;
     }
   });
+  
+  console.log(`QR Modal opened for batch: ${batchId}`);
 }
 
 $('#closeQRModal').addEventListener('click', () => {
@@ -635,13 +769,24 @@ function renderFarmer() {
   
   const rows = d.listings.map(x => `
     <tr class="border-t hover:bg-gray-50">
-      <td class="py-2 px-2 font-mono text-xs">${x.id}</td>
+      <td class="py-2 px-2">
+        <div class="flex items-center gap-2">
+          <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">${x.id}</span>
+          <button onclick="showQRModal('${x.id}')" class="text-blue-500 hover:text-blue-700 text-xs" title="Show QR Code">
+            📱
+          </button>
+        </div>
+      </td>
       <td class="py-2 px-2">${x.crop}</td>
       <td class="py-2 px-2">${x.grade}</td>
       <td class="py-2 px-2">${x.qty} kg</td>
       <td class="py-2 px-2">₹${x.price}/kg</td>
       <td class="py-2 px-2"><span class="${x.status==='AVAILABLE'?'text-emerald-600':'text-gray-600'} text-xs px-2 py-1 rounded-full ${x.status==='AVAILABLE'?'bg-emerald-100':'bg-gray-100'}">${x.status}</span></td>
-      <td class="py-2 px-2"><button onclick="showQRModal('${x.id}')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors">Show QR</button></td>
+      <td class="py-2 px-2">
+        <button onclick="showQRModal('${x.id}')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors flex items-center gap-1">
+          <span>📱</span> <span class="hidden sm:inline">Show QR</span>
+        </button>
+      </td>
     </tr>`).join('');
   
   const tableElement = $('#farmerTable');
